@@ -26,7 +26,7 @@ if st.button("Download", icon= "⬇️", width= "stretch"):
             api_format = "both"
         
         with st.spinner("Loading..."):
-            api_url = BACKEND_URL
+            api_url = f"{BACKEND_URL}/downloads"
             parameters = {"url": url, "download_type": api_format}
             response = re.get(url= api_url, params= parameters, stream=True) # getting the response from our fastapi 
             
