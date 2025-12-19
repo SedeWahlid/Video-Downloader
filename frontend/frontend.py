@@ -26,16 +26,31 @@ if st.button("Download", icon= "⬇️", width= "stretch"):
             api_format = "both"
         
         with st.spinner("Loading..."):
-            api_url = f"{BACKEND_URL}/downloads"
-            parameters = {"url": url, "download_type": api_format}
-            response = re.get(url= api_url, params= parameters, stream=True) # getting the response from our fastapi 
-            
-            # creating the output file via the response data and the file extensions 
-            if response.ok:
-                ext = "mp3" if api_format == "audio only" else "mp4"
-                mime = "audio/mpeg" if api_format == "audio only" else "video/mp4"
+            try:
+                api_url = f"{BACKEND_URL}/downloads"
+                parameters = {"url": url, "download_type": api_format}
+                response = re.get(url= api_url, params= parameters, stream=True) # getting the response from our fastapi 
                 
-                st.download_button("Save File", icon="⬇️",data=response.content, file_name=f"download.{ext}",mime=mime)
-            else:
-                st.error(f"Could not download file: {response.status_code}")
-                st.error(f"Error Details: {response.text}")
+                # creating the output file via the response data and the file extensions 
+                if response.ok:
+                        # Save to session state
+                        ext = "mp3" if api_format == "audio only" else "mp4"
+                        st.session_state.mime_type = "audio/mpeg" if api_format == "audio only" else "video/mp4"
+                        st.session_state.file_name = f"download.{ext}"
+                        st.session_state.downloaded_file = response.content
+                        st.success("Video has been downloaded ✅")
+                else:
+                        st.error(f"Server Error: {response.status_code}")
+                        st.error(f"Could not download file: {response.text}")
+            except Exception as e:
+                    st.error(f"Connection Error: {e}")
+
+# save event outside the scope of the download button
+if st.session_state.downloaded_file is not None:
+    st.download_button(
+        label="Save", 
+        icon="💾",
+        data=st.session_state.downloaded_file, 
+        file_name=st.session_state.file_name,
+        mime=st.session_state.mime_type
+    )

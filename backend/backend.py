@@ -1,5 +1,6 @@
 import fastapi as fp 
 from fastapi.responses import FileResponse
+from fastapi import HTTPException
 import yt_dlp as yt
 import uuid
 import os 
@@ -69,3 +70,4 @@ def download_video(url:str,download_type:str, background_tasks : fp.BackgroundTa
             return FileResponse(path=filename_path,filename= user_filename, media_type = mime_type)
     except Exception as e :
         print(f"ERROR could not download video: {e}")
+        raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
