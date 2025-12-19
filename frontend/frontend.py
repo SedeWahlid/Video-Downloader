@@ -1,0 +1,37 @@
+import streamlit as st 
+import requests as re
+
+
+# -- STREAMLIT INTERFACE --
+st.title("⬇Video Downloader")
+st.set_page_config(layout= "wide")
+st.markdown("---")
+st.error("⛔️ There is a possibility that Videos cannot be downloaded such as :\n- Server performance (e.g. large videos)\n- Video hosting platform has strong Security measurements, preventing any downloads.")
+url = st.text_input("Enter Video Url here...")
+format_choice = st.radio("Choose Type:", ["Video only (Mp4)", "Audio only (Mp3)", "Video and Audio (Mp4)"])
+
+BACKEND_URL = st.secrets.get("BACKEND_URL") # getting the url from Streamlit render
+
+# downloading based on format choice of user 
+if st.button("Download", icon= "⬇️", width= "stretch"):
+    if url :
+        if format_choice == "Video only (Mp4)" :
+            api_format = "video only"
+        elif format_choice == "Audio only (Mp3)":
+            api_format = "audio only"
+        else:
+            api_format = "both"
+        
+        with st.spinner("Loading..."):
+            api_url = BACKEND_URL
+            parameters = {"url": url, "download_type": api_format}
+            response = re.get(url= api_url, params= parameters, stream=True) # getting the response from our fastapi 
+            
+            # creating the output file via the response data and the file extensions 
+            if response.ok:
+                ext = "mp3" if api_format == "audio only" else "mp4"
+                mime = "audio/mpeg" if api_format == "audio only" else "video/mp4"
+                
+                st.download_button("Save File", icon="⬇️",data=response.content, file_name=f"download.{ext}",mime=mime)
+            else:
+                st.error("Could not download file")
