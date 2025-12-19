@@ -10,7 +10,10 @@ st.error("⛔️ There is a possibility that Videos cannot be downloaded such as
 url = st.text_input("Enter Video Url here...")
 format_choice = st.radio("Choose Type:", ["Video only (Mp4)", "Audio only (Mp3)", "Video and Audio (Mp4)"])
 
-BACKEND_URL = st.secrets.get("BACKEND_URL") # getting the url from Streamlit render
+try:
+    BACKEND_URL = st.secrets.get("BACKEND_URL") # getting the url from Streamlit render
+except Exception as e :
+    print(f"Error could not secure connection to api: {e}")
 
 # downloading based on format choice of user 
 if st.button("Download", icon= "⬇️", width= "stretch"):
