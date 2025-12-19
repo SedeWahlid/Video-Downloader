@@ -37,4 +37,5 @@ if st.button("Download", icon= "⬇️", width= "stretch"):
                 
                 st.download_button("Save File", icon="⬇️",data=response.content, file_name=f"download.{ext}",mime=mime)
             else:
-                st.error("Could not download file")
+                st.error(f"Could not download file: {response.status_code}")
+                st.error(f"Error Details: {response.text}")
