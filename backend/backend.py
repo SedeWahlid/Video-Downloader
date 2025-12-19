@@ -20,24 +20,38 @@ def cleanup(path: str):
 def download_video(url:str,download_type:str, background_tasks : fp.BackgroundTasks):
     file_id = str(uuid.uuid4()) # creating a unique ID for the file 
     
+    # spoofing by commanding to use Android API but only for youtube URLs 
+    spoof_options = {
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'ios'],
+                'player_skip': ['web', 'tv']
+            }
+        },
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    
     # based on users download type we set the options for the download on video only | audio only | video and audio 
     try: 
         if download_type == "both":
             option = {
                 'format': 'bestvideo+bestaudio/best',
                 'merge_output_format': 'mp4',
-                'outtmpl': f'downloads/{file_id}.%(ext)s'}
+                'outtmpl': f'downloads/{file_id}.%(ext)s',
+                **spoof_options}
         elif download_type == "audio only":
             option = {
                 'format': 'bestaudio/best',
                 'postprocessors': [{'key': 'FFmpegExtractAudio','preferredcodec': 'mp3','preferredquality': '192',}],
-                'outtmpl': f'downloads/{file_id}.%(ext)s'
+                'outtmpl': f'downloads/{file_id}.%(ext)s',
+                **spoof_options
                 }
         elif download_type == "video only":
             option = {
                 'format': 'bestvideo/best',
                 'merge_output_format': 'mp4',
-                'outtmpl': f'downloads/{file_id}.%(ext)s'}
+                'outtmpl': f'downloads/{file_id}.%(ext)s',
+                **spoof_options}
             
         os.makedirs("downloads", exist_ok=True) # making sure that directory exists for the output files 
         
