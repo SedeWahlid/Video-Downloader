@@ -5,6 +5,7 @@ import yt_dlp as yt
 import uuid
 import os 
 import glob
+import tempfile
 
 # -- VIDEO/AUDIO DOWNLOADER -- 
 
@@ -20,38 +21,41 @@ def cleanup(path: str):
 def download_video(url:str,download_type:str, background_tasks : fp.BackgroundTasks):
     file_id = str(uuid.uuid4()) # creating a unique ID for the file 
     
-    # spoofing by commanding to use Android API but only for youtube URLs 
-    spoof_options = {
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['android', 'ios'],
-                'player_skip': ['web', 'tv']
-            }
-        },
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    }
+    cookie_temp_file = None
+    cookies_content = os.environ.get("YOUTUBE_COOKIES")
+    if cookies_content:
+        # creating a temporary file to hold the cookies
+        # delete=False is needed so we can close the file and let yt-dlp open it again
+        cookie_temp_file = tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.txt')
+        cookie_temp_file.write(cookies_content)
+        cookie_temp_file.close() 
+        print(f"Cookies loaded to temp file:{cookie_temp_file.name}")
+
+    # definiton of user agents 
+    my_user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     
     # based on users download type we set the options for the download on video only | audio only | video and audio 
     try: 
+        base_opts = {
+            'outtmpl': f'downloads/{file_id}.%(ext)s',
+            'user_agent': my_user_agent,
+            # If cookie file exists we use it if not we wont.
+            'cookiefile': cookie_temp_file.name if cookie_temp_file else None}
         if download_type == "both":
             option = {
                 'format': 'bestvideo+bestaudio/best',
                 'merge_output_format': 'mp4',
-                'outtmpl': f'downloads/{file_id}.%(ext)s',
-                **spoof_options}
+                'outtmpl': f'downloads/{file_id}.%(ext)s',**base_opts}
         elif download_type == "audio only":
             option = {
                 'format': 'bestaudio/best',
                 'postprocessors': [{'key': 'FFmpegExtractAudio','preferredcodec': 'mp3','preferredquality': '192',}],
-                'outtmpl': f'downloads/{file_id}.%(ext)s',
-                **spoof_options
-                }
+                'outtmpl': f'downloads/{file_id}.%(ext)s',**base_opts}
         elif download_type == "video only":
             option = {
                 'format': 'bestvideo/best',
                 'merge_output_format': 'mp4',
-                'outtmpl': f'downloads/{file_id}.%(ext)s',
-                **spoof_options}
+                'outtmpl': f'downloads/{file_id}.%(ext)s',**base_opts}
             
         os.makedirs("downloads", exist_ok=True) # making sure that directory exists for the output files 
         
@@ -85,3 +89,8 @@ def download_video(url:str,download_type:str, background_tasks : fp.BackgroundTa
     except Exception as e :
         print(f"ERROR could not download video: {e}")
         raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
+    finally:
+        # deleting the temp cookie file so it does not fill up the server
+        if cookie_temp_file and os.path.exists(cookie_temp_file.name):
+            os.remove(cookie_temp_file.name)
+            print("cleaned...")
