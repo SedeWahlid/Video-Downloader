@@ -10,6 +10,14 @@ st.error("⛔️ There is a possibility that Videos cannot be downloaded such as
 url = st.text_input("Enter Video Url here...")
 format_choice = st.radio("Choose Type:", ["Video only (Mp4)", "Audio only (Mp3)", "Video and Audio (Mp4)"])
 
+# initializing session states to hold the file data
+if "downloaded_file" not in st.session_state:
+    st.session_state.downloaded_file = None
+if "file_name" not in st.session_state:
+    st.session_state.file_name = ""
+if "mime_type" not in st.session_state:
+    st.session_state.mime_type = ""
+
 try:
     BACKEND_URL = st.secrets.get("BACKEND_URL") # getting the url from Streamlit render
 except Exception as e :
